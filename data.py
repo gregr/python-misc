@@ -221,7 +221,7 @@ def apply_transforms(src_fname, tgt_fname, names, transforms, limit=None):
 
 
 def is_constant(col):
-    return len(tuple(col.summary.iterkeys())) == 1
+    return len(tuple(col.summary.iterkeys())) <= 1
 
 
 def constant_cols(frame):
