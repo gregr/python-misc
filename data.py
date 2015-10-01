@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import csv
 from itertools import chain
 from .dict import countdict, countdict_setops
+from .logging import Meter
 
 
 def validate_sanity(file_name):
@@ -200,7 +201,7 @@ class Frame(object):
         return self.zipmap(Column.difference_symmetric, frame)
 
 
-def summarize(file_name, header=None, limit=None):
+def summarize(file_name, header=None, limit=None, meter_period=10000):
     col_name_to_index = {}
     reader = csv.reader(open(file_name))
     if header is None:
@@ -208,11 +209,14 @@ def summarize(file_name, header=None, limit=None):
     for idx, key in enumerate(header):
         col_name_to_index[key] = idx
     freqs = [countdict() for _ in header]
+    meter = Meter(meter_period, 'total rows processed: %d')
     for ridx, row in enumerate(reader):
         if limit is not None and ridx >= limit:
             break
         for cidx, col in enumerate(row):
             freqs[cidx][col] += 1
+        meter.inc(1)
+    meter.log()
     frame = Frame(header, [Column(ColumnSummary(freq)) for freq in freqs])
     return frame
 
