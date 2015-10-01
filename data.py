@@ -176,9 +176,16 @@ class Frame(object):
             names[idx] = name
         return names, transforms
 
+    def zip(self, frame):
+        for name, col0 in zip(self.names, self.cols):
+            col1 = frame.get(name)
+            if col1 is not None:
+                yield name, (col0, col1)
+
     def zipmap(self, op, frame):
-        cols = [op(c0, c1) for c0, c1 in zip(self.cols, frame.cols)]
-        return Frame(self.names, cols)
+        names, colpairs = zip(*self.zip(frame))
+        cols = [op(c0, c1) for c0, c1 in colpairs]
+        return Frame(names, cols)
 
     def union(self, frame):
         return self.zipmap(Column.union, frame)
