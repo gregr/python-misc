@@ -192,4 +192,13 @@ def apply_transforms(src_fname, tgt_fname, names, transforms, limit=None):
         writer.writerow(tuple(transformed_row(transforms, row)))
 
 
+def is_constant(col):
+    return len(tuple(col.summary.iterkeys())) == 1
+
+
+def constant_cols(frame):
+    return [(frame.names[idx], col) for idx, col in enumerate(frame.cols)
+            if is_constant(col)]
+
+
 # TODO: correlation
