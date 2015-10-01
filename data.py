@@ -112,6 +112,9 @@ class Column(object):
     def transforms(self):
         return self.move
 
+    def uniques(self):
+        return tuple(self.summary.iterkeys())
+
     def union(self, col):
         return Column(self.summary.union(col.summary))
 
@@ -242,13 +245,30 @@ def apply_transforms(src_fname, tgt_fname, names, transforms,
     meter.log()
 
 
-def is_constant(col):
-    return len(tuple(col.summary.iterkeys())) <= 1
+def mapfilter_cols(frame, op=lambda x: x, pred=lambda _: True):
+    return [(frame.names[idx], op(col)) for idx, col in enumerate(frame.cols)
+            if pred(col)]
 
 
-def constant_cols(frame):
-    return [(frame.names[idx], col) for idx, col in enumerate(frame.cols)
-            if is_constant(col)]
+def uniques_lteq(threshold):
+    def pred(col):
+        return len(col.uniques()) <= threshold
+    return pred
+
+
+def frame_uniques_lteq(frame, threshold=1):
+    return mapfilter_cols(frame, pred=uniques_lteq(threshold))
+
+
+def show_low_uniques(frame, threshold, detailed=False):
+    matches = frame_uniques_lteq(frame, threshold)
+    if detailed:
+        for name, col in matches:
+            print name, col.summary.cats
+    else:
+        names = zip(*matches)[0]
+        print names
+    print 'low uniques col count:', len(matches)
 
 
 def show_anomalies(frame, ratio=None, coverage=None):
