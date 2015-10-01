@@ -72,17 +72,17 @@ class ColumnSummary(object):
         cats = countdict_setops.union(self.cats, summ.cats)
         return ColumnSummary(cats)
 
-    def diff(self, summ):
+    def difference(self, summ):
         cats = countdict_setops.difference(self.cats, summ.cats)
         return ColumnSummary(cats)
 
     def intersection(self, summ):
-        shadow = self.diff(summ)
-        return self.diff(shadow)
+        shadow = self.difference(summ)
+        return self.difference(shadow)
 
-    def diff_symmetric(self, summ):
-        shadow = self.diff(summ)
-        return summ.diff(self).union(shadow)
+    def difference_symmetric(self, summ):
+        shadow = self.difference(summ)
+        return summ.difference(self).union(shadow)
 
 
 class Column(object):
