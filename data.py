@@ -1,7 +1,6 @@
-from collections import defaultdict
 import csv
 from itertools import chain
-from .dict import countdict_setops as countdict
+from .dict import countdict, countdict_setops
 
 
 def validate_sanity(file_name):
@@ -56,13 +55,13 @@ class ColumnSummary(object):
         return chain(self.cats.iterkeys(), self.nums.iterkeys())
 
     def union(self, summ):
-        cats = countdict.union(self.cats, summ.cats)
-        nums = countdict.union(self.nums, summ.nums)
+        cats = countdict_setops.union(self.cats, summ.cats)
+        nums = countdict_setops.union(self.nums, summ.nums)
         return ColumnSummary(nums, cats)
 
     def diff(self, summ):
-        cats = countdict.difference(self.cats, summ.cats)
-        nums = countdict.difference(self.nums, summ.nums)
+        cats = countdict_setops.difference(self.cats, summ.cats)
+        nums = countdict_setops.difference(self.nums, summ.nums)
         return ColumnSummary(nums, cats)
 
     def intersection(self, summ):
@@ -165,7 +164,7 @@ def summarize(file_name, header=None, limit=None):
         header = reader.next()
     for idx, key in enumerate(header):
         col_name_to_index[key] = idx
-    freqs = [defaultdict(int) for _ in header]
+    freqs = [countdict() for _ in header]
     for ridx, row in enumerate(reader):
         if limit is not None and ridx >= limit:
             break
