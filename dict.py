@@ -2,8 +2,8 @@ from collections import defaultdict
 from operator import add, sub
 
 
-countdict = lambda orig=None: defaultdict(int, orig)
-setdict = lambda orig=None: defaultdict(set, orig)
+countdict = lambda orig={}: defaultdict(int, orig)
+setdict = lambda orig={}: defaultdict(set, orig)
 
 
 class SetOps(object):
