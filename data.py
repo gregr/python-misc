@@ -1,6 +1,7 @@
 from collections import defaultdict
 import csv
 from itertools import chain
+from .dict import countdict_setops as countdict
 
 
 def validate_sanity(file_name):
@@ -54,6 +55,24 @@ class ColumnSummary(object):
     def iterkeys(self):
         return chain(self.cats.iterkeys(), self.nums.iterkeys())
 
+    def union(self, summ):
+        cats = countdict.union(self.cats, summ.cats)
+        nums = countdict.union(self.nums, summ.nums)
+        return ColumnSummary(nums, cats)
+
+    def diff(self, summ):
+        cats = countdict.difference(self.cats, summ.cats)
+        nums = countdict.difference(self.nums, summ.nums)
+        return ColumnSummary(nums, cats)
+
+    def intersection(self, summ):
+        shadow = self.diff(summ)
+        return self.diff(shadow)
+
+    def diff_symmetric(self, summ):
+        shadow = self.diff(summ)
+        return summ.diff(self).union(shadow)
+
 
 def col_summary(freqs):
     num_freqs = {}
@@ -79,8 +98,7 @@ class Column(object):
         keys = set(self.moved_from.iterkeys())
         if not force and target in keys:
             raise RuntimeError("target already exists; src='%s' tgt='%s'",
-                               source,
-                               target)
+                               source, target)
         orig = self.moved_from[source]
         del self.moved_from[source]
         self.moved_from[target] = orig
@@ -174,4 +192,4 @@ def apply_transforms(src_fname, tgt_fname, names, transforms, limit=None):
         writer.writerow(tuple(transformed_row(transforms, row)))
 
 
-# TODO: union, diff, intersection
+# TODO: correlation
