@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import csv
 from itertools import chain
 from .dict import countdict, countdict_setops
