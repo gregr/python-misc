@@ -227,15 +227,19 @@ def transformed_row(transforms, row):
             yield trans.get(col, col)
 
 
-def apply_transforms(src_fname, tgt_fname, names, transforms, limit=None):
+def apply_transforms(src_fname, tgt_fname, names, transforms,
+                     limit=None, meter_period=10000):
     reader = csv.reader(open(src_fname))
     writer = csv.writer(open(tgt_fname, 'w'))
     reader.next()
     writer.writerow(names)
+    meter = Meter(meter_period, 'total rows written: %d')
     for ridx, row in enumerate(reader):
         if limit is not None and ridx >= limit:
             break
         writer.writerow(tuple(transformed_row(transforms, row)))
+        meter.inc(1)
+    meter.log()
 
 
 def is_constant(col):
