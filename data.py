@@ -11,9 +11,23 @@ def validate_sanity(file_name):
 
 
 class ColumnSummary(object):
-    def __init__(self, nums, cats):
-        self.cats = cats
-        self.nums = nums
+    def __init__(self, freqs):
+        self.cats = freqs
+        self.nums = countdict()
+
+    def enable_interval(self):
+        self.nums = countdict()
+        for key, count in self.cats.items():
+            try:
+                self.nums[float(key)] = count
+                del self.cats[key]
+            except ValueError:
+                pass
+
+    def disable_interval(self):
+        for key, count in self.nums.iteritems():
+            self.cats[str(key)] = count
+        self.nums = countdict()
 
     def refresh(self):
         self.sum = 0
@@ -71,17 +85,6 @@ class ColumnSummary(object):
     def diff_symmetric(self, summ):
         shadow = self.diff(summ)
         return summ.diff(self).union(shadow)
-
-
-def col_summary(freqs):
-    num_freqs = {}
-    for key, count in freqs.items():
-        try:
-            num_freqs[float(key)] = count
-            del freqs[key]
-        except ValueError:
-            pass
-    return ColumnSummary(num_freqs, freqs)
 
 
 class Column(object):
@@ -170,7 +173,7 @@ def summarize(file_name, header=None, limit=None):
             break
         for cidx, col in enumerate(row):
             freqs[cidx][col] += 1
-    frame = Frame(header, [Column(col_summary(freq)) for freq in freqs])
+    frame = Frame(header, [Column(ColumnSummary(freq)) for freq in freqs])
     return frame
 
 
