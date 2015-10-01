@@ -201,4 +201,15 @@ def constant_cols(frame):
             if is_constant(col)]
 
 
+def show_anomalies(frame, ratio=None, coverage=None):
+    hits, misses = frame.filter(ratio=ratio, coverage=coverage)
+    print 'hits'
+    for idx, summ in sorted(hits.iteritems()):
+        print idx, summ.ratio, summ.coverage, len(summ.nums), summ.cats
+    print
+    print 'misses'
+    for idx, summ in sorted(misses.iteritems()):
+        print idx, summ.ratio, summ.coverage, summ.nums, len(summ.cats)
+
+
 # TODO: correlation
