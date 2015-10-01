@@ -134,8 +134,14 @@ class Frame(object):
         self.name_to_index_orig = self.name_to_index.copy()
         self.removed = set()
 
+    def get(self, name):
+        idx = self.name_to_index.get(name)
+        if idx is None:
+            return None
+        return self.cols[idx]
+
     def __getitem__(self, name):
-        self.cols[self.name_to_index[name]]
+        return self.cols[self.name_to_index[name]]
 
     def __delitem__(self, name):
         idx = self.name_to_index[name]
