@@ -70,13 +70,11 @@ class ColumnSummary(object):
 
     def union(self, summ):
         cats = countdict_setops.union(self.cats, summ.cats)
-        nums = countdict_setops.union(self.nums, summ.nums)
-        return ColumnSummary(nums, cats)
+        return ColumnSummary(cats)
 
     def diff(self, summ):
         cats = countdict_setops.difference(self.cats, summ.cats)
-        nums = countdict_setops.difference(self.nums, summ.nums)
-        return ColumnSummary(nums, cats)
+        return ColumnSummary(cats)
 
     def intersection(self, summ):
         shadow = self.diff(summ)
