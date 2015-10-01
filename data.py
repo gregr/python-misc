@@ -89,6 +89,9 @@ class Column(object):
         del self.summary[source]
         self.summary[target] += count
 
+    def transforms(self):
+        return self.move
+
 
 class Frame(object):
     def __init__(self, names, cols):
@@ -126,6 +129,16 @@ class Frame(object):
             hits[name] = summ
         return hits, misses
 
+    def transforms(self):
+        transforms = [col.transforms() for col in self.cols]
+        for idx in sorted(self.name_to_index_orig[name]
+                          for name in self.removed):
+            transforms.insert(idx, None)
+        names = [None] * len(self.names)
+        for name, idx in self.name_to_index.iteritems():
+            names[idx] = name
+        return names, transforms
+
 
 def summarize(file_name, header=None, limit=None):
     col_name_to_index = {}
@@ -142,6 +155,23 @@ def summarize(file_name, header=None, limit=None):
             freqs[cidx][col] += 1
     frame = Frame(header, [Column(col_summary(freq)) for freq in freqs])
     return frame
+
+
+def transformed_row(transforms, row):
+    for col, trans in zip(row, transforms):
+        if trans is not None:
+            yield trans.get(col, col)
+
+
+def apply_transforms(src_fname, tgt_fname, names, transforms, limit=None):
+    reader = csv.reader(open(src_fname))
+    writer = csv.writer(open(tgt_fname, 'w'))
+    reader.next()
+    writer.writerow(names)
+    for ridx, row in enumerate(reader):
+        if limit is not None and ridx >= limit:
+            break
+        writer.writerow(tuple(transformed_row(transforms, row)))
 
 
 # TODO: union, diff, intersection
