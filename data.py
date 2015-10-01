@@ -110,6 +110,18 @@ class Column(object):
     def transforms(self):
         return self.move
 
+    def union(self, col):
+        return Column(self.summary.union(col.summary))
+
+    def difference(self, col):
+        return Column(self.summary.difference(col.summary))
+
+    def intersection(self, col):
+        return Column(self.summary.intersection(col.summary))
+
+    def difference_symmetric(self, col):
+        return Column(self.summary.difference_symmetric(col.summary))
+
 
 class Frame(object):
     def __init__(self, names, cols):
@@ -156,6 +168,22 @@ class Frame(object):
         for name, idx in self.name_to_index.iteritems():
             names[idx] = name
         return names, transforms
+
+    def zipmap(self, op, frame):
+        cols = [op(c0, c1) for c0, c1 in zip(self.cols, frame.cols)]
+        return Frame(self.names, cols)
+
+    def union(self, frame):
+        return self.zipmap(Column.union, frame)
+
+    def difference(self, frame):
+        return self.zipmap(Column.difference, frame)
+
+    def intersection(self, frame):
+        return self.zipmap(Column.intersection, frame)
+
+    def difference_symmetric(self, frame):
+        return self.zipmap(Column.difference_symmetric, frame)
 
 
 def summarize(file_name, header=None, limit=None):
