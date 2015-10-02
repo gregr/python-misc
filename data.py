@@ -216,6 +216,7 @@ class Frame(object):
 
 def summarize(file_name, names=None, limit=None,
               meter_period=default_meter_period):
+    logging.info('summarizing: %s; names=%s limit=%s', file_name, names, limit)
     reader = csv.reader(open(file_name))
     if names is None:
         names = reader.next()
@@ -228,6 +229,7 @@ def summarize(file_name, names=None, limit=None,
             freqs[cidx][col] += 1
         meter.inc(1)
     meter.log()
+    logging.info('finished summarizing: %s', file_name)
     frame = Frame(names, [Column(ColumnSummary(freq)) for freq in freqs])
     return frame
 
