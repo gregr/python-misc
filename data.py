@@ -285,11 +285,16 @@ chi_squareds = [
 
 
 def chi_squared_prob(chi_squared, deg_freedom):
-    if deg_freedom < 1 or deg_freedom > 10:
+    if deg_freedom < 1:
+        return 1.0
+    if deg_freedom > 10:
         return None
     scores = chi_squareds[deg_freedom - 1]
     idx = bisect_left(scores, chi_squared, 0, len(scores))
     return confidences[idx]
+
+
+# TODO: interval correlation
 
 
 def transformed_row(transforms, row):
@@ -348,6 +353,3 @@ def show_anomalies(frame, ratio=None, coverage=None):
     print 'misses'
     for idx, summ in sorted(misses.iteritems()):
         print idx, summ.ratio, summ.coverage, summ.nums, len(summ.cats)
-
-
-# TODO: correlation
