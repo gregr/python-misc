@@ -148,7 +148,6 @@ class Frame(object):
         self.name_to_index = {}
         for idx, name in enumerate(names):
             self.name_to_index[name] = idx
-        self.name_to_index_orig = self.name_to_index.copy()
         self.removed = set()
 
     def get(self, name):
@@ -184,14 +183,9 @@ class Frame(object):
         return hits, misses
 
     def transforms(self):
-        transforms = [col.transforms() for col in self.cols]
-        for idx in sorted(self.name_to_index_orig[name]
-                          for name in self.removed):
-            transforms.insert(idx, None)
-        names = [None] * len(self.names)
-        for name, idx in self.name_to_index.iteritems():
-            names[idx] = name
-        return names, transforms
+        name_to_remapping = dict((name, col.transforms())
+                                 for name, col in zip(self.names, self.cols))
+        return self.removed, name_to_remapping
 
     def zip(self, frame):
         for name, col0 in zip(self.names, self.cols):
@@ -317,23 +311,42 @@ def chi_squared_prob_correlation(chi_squared, deg_freedom, dims_pop):
 # TODO: interval correlation
 
 
-def transformed_row(transforms, row):
-    for col, trans in zip(row, transforms):
-        if trans is not None:
-            yield trans.get(col, col)
+def names_and_remappings(current_names, removed_names, name_to_remapping):
+    name_to_idx = dict((name, idx) for idx, name in enumerate(current_names))
+    name_to_idx
+    remappings = [{}] * len(current_names)
+    for name in removed_names:
+        name_to_remapping[name] = None
+    for name, remapping in name_to_remapping.iteritems():
+        idx = name_to_idx.get(name)
+        if idx is not None:
+            remappings[idx] = remapping
+    new_names = [name for name, rmap in zip(current_names, remappings)
+                 if rmap is not None]
+    return new_names, remappings
 
 
-def apply_transforms(src_fname, tgt_fname, names, transforms,
-                     limit=None, meter_period=default_meter_period):
+def transformed_row(remappings, row):
+    for col, remap in zip(row, remappings):
+        if remap is not None:
+            yield remap.get(col, col)
+
+
+def apply_transforms(src_fname, tgt_fname, removed_names, name_to_remapping,
+                     current_names=None, limit=None,
+                     meter_period=default_meter_period):
     reader = csv.reader(open(src_fname))
     writer = csv.writer(open(tgt_fname, 'w'))
-    reader.next()
-    writer.writerow(names)
+    if current_names is None:
+        current_names = reader.next()
+    new_names, remappings = names_and_remappings(
+        current_names, removed_names, name_to_remapping)
+    writer.writerow(new_names)
     meter = Meter(meter_period, 'total rows written: %d')
     for ridx, row in enumerate(reader):
         if limit is not None and ridx >= limit:
             break
-        writer.writerow(tuple(transformed_row(transforms, row)))
+        writer.writerow(tuple(transformed_row(remappings, row)))
         meter.inc(1)
     meter.log()
 
