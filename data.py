@@ -1,10 +1,15 @@
 from __future__ import absolute_import
 import csv
-from itertools import chain
+from itertools import chain, izip_longest
 from .dict import countdict, countdict_setops
 from .logging import Meter
 
 default_meter_period = 10000
+
+
+def grouper(iterable, n):
+    args = [iter(iterable)] * n
+    return list(izip_longest(fillvalue=None, *args))
 
 
 def validate_sanity(file_name):
@@ -222,6 +227,46 @@ def summarize(file_name, header=None, limit=None,
     meter.log()
     frame = Frame(header, [Column(ColumnSummary(freq)) for freq in freqs])
     return frame
+
+
+def pairwise_freqs(file_name, col0, col1, header=None, limit=None,
+                   meter_period=default_meter_period):
+    reader = csv.reader(open(file_name))
+    if header is None:
+        header = reader.next()
+    name_to_index = dict((name, idx) for idx, name in enumerate(header))
+    idx0 = name_to_index[col0]
+    idx1 = name_to_index[col1]
+    freqs = countdict()
+    meter = Meter(meter_period, 'total rows processed: %d')
+    for ridx, row in enumerate(reader):
+        if limit is not None and ridx >= limit:
+            break
+        freqs[(row[idx0], row[idx1])] += 1
+        meter.inc(1)
+    meter.log()
+    return freqs
+
+
+def chi_squared(pair_freqs):
+    keys = sorted(pair_freqs.iterkeys())
+    ks0, ks1 = map(sorted, map(set, zip(*keys)))
+    gs0 = grouper(sorted(pair_freqs.iteritems()), len(ks1))
+    gs1 = zip(*gs0)
+    ts0, ts1 = [[sum(zip(*grp)[1]) for grp in gs] for gs in (gs0, gs1)]
+    total = float(sum(ts0))
+    result = 0
+    for k0, t0 in zip(ks0, ts0):
+        for k1, t1 in zip(ks1, ts1):
+            observed = pair_freqs[(k0, k1)]
+            expected = (t0 / total) * t1
+            result += ((observed - expected) ** 2) / expected
+    deg_freedom = (len(ks0) - 1) * (len(ks1) - 1)
+    return result, deg_freedom
+
+
+def chi_squared_with(*args, **kwargs):
+    return chi_squared(pairwise_freqs(*args, **kwargs))
 
 
 def transformed_row(transforms, row):
