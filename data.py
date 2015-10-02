@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from bisect import bisect_left
 import csv
 from itertools import chain, izip_longest
+import logging
 import math
 from .dict import countdict, countdict_setops
 from .logging import Meter
@@ -337,6 +338,12 @@ def transformed_row(remappings, row):
 def apply_transforms(src_fname, tgt_fname, removed_names, name_to_remapping,
                      current_names=None, limit=None,
                      meter_period=default_meter_period):
+    remapped_names = sorted(
+        name for name, remap in name_to_remapping.iteritems()
+        if len(remap) != 0)
+    logging.info("transforming '%s' to '%s'", src_fname, tgt_fname)
+    logging.info('removing columns: %s', sorted(removed_names))
+    logging.info('modifying columns: %s', remapped_names)
     reader = csv.reader(open(src_fname))
     writer = csv.writer(open(tgt_fname, 'w'))
     if current_names is None:
@@ -351,6 +358,7 @@ def apply_transforms(src_fname, tgt_fname, removed_names, name_to_remapping,
         writer.writerow(tuple(transformed_row(remappings, row)))
         meter.inc(1)
     meter.log()
+    logging.info("finished transforming '%s' to '%s'", src_fname, tgt_fname)
 
 
 def mapfilter_cols(frame, op=lambda x: x, pred=lambda _: True):
