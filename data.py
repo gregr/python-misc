@@ -271,7 +271,7 @@ def chi_squared(pair_freqs):
             expected = (t0 / total) * t1
             result += ((observed - expected) ** 2) / expected
     deg_freedom = (len(ks0) - 1) * (len(ks1) - 1)
-    return result, deg_freedom
+    return result, deg_freedom, (len(ks0), len(ks1), total)
 
 
 def chi_squared_with(*args, **kwargs):
@@ -307,6 +307,11 @@ def chi_squared_correlation(chi_squared, dim0, dim1, population):
     if dim_factor == 0:
         return 0.0
     return math.sqrt(chi_squared / (population * dim_factor))
+
+
+def chi_squared_prob_correlation(chi_squared, deg_freedom, dims_pop):
+    return (chi_squared_prob(chi_squared, deg_freedom),
+            chi_squared_correlation(chi_squared, *dims_pop))
 
 
 # TODO: interval correlation
