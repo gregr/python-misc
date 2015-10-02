@@ -9,6 +9,10 @@ from .logging import Meter
 default_meter_period = 10000
 
 
+def cross(xs, ys):
+    return [(x, y) for x in xs for y in ys]
+
+
 def grouper(iterable, n):
     args = [iter(iterable)] * n
     return list(izip_longest(fillvalue=None, *args))
@@ -247,6 +251,9 @@ def pairwise_freqs(file_name, col0, col1, header=None, limit=None,
         freqs[(row[idx0], row[idx1])] += 1
         meter.inc(1)
     meter.log()
+    ks0, ks1 = map(set, zip(*freqs.iterkeys()))
+    for pair in cross(ks0, ks1):
+        freqs[pair] += 0
     return freqs
 
 
