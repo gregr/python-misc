@@ -4,6 +4,8 @@ from itertools import chain
 from .dict import countdict, countdict_setops
 from .logging import Meter
 
+default_meter_period = 10000
+
 
 def validate_sanity(file_name):
     counts = set()
@@ -204,13 +206,11 @@ class Frame(object):
         return self.zipmap(Column.difference_symmetric, frame)
 
 
-def summarize(file_name, header=None, limit=None, meter_period=10000):
-    col_name_to_index = {}
+def summarize(file_name, header=None, limit=None,
+              meter_period=default_meter_period):
     reader = csv.reader(open(file_name))
     if header is None:
         header = reader.next()
-    for idx, key in enumerate(header):
-        col_name_to_index[key] = idx
     freqs = [countdict() for _ in header]
     meter = Meter(meter_period, 'total rows processed: %d')
     for ridx, row in enumerate(reader):
@@ -231,7 +231,7 @@ def transformed_row(transforms, row):
 
 
 def apply_transforms(src_fname, tgt_fname, names, transforms,
-                     limit=None, meter_period=10000):
+                     limit=None, meter_period=default_meter_period):
     reader = csv.reader(open(src_fname))
     writer = csv.writer(open(tgt_fname, 'w'))
     reader.next()
