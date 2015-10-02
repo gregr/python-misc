@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from bisect import bisect_left
 import csv
 from itertools import chain, izip_longest
+import math
 from .dict import countdict, countdict_setops
 from .logging import Meter
 
@@ -292,6 +293,13 @@ def chi_squared_prob(chi_squared, deg_freedom):
     scores = chi_squareds[deg_freedom - 1]
     idx = bisect_left(scores, chi_squared, 0, len(scores))
     return confidences[idx]
+
+
+def chi_squared_correlation(chi_squared, dim0, dim1, population):
+    dim_factor = min(dim0, dim1) - 1
+    if dim_factor == 0:
+        return 0.0
+    return math.sqrt(chi_squared / (population * dim_factor))
 
 
 # TODO: interval correlation
