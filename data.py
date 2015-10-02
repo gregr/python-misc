@@ -123,7 +123,9 @@ class Column(object):
         self.summary[target] += count
 
     def transforms(self):
-        return self.move
+        remapping = dict((src, tgt) for src, tgt in self.move.iteritems()
+                         if src != tgt)
+        return remapping
 
     def uniques(self):
         return tuple(self.summary.iterkeys())
