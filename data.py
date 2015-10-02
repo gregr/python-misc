@@ -214,12 +214,12 @@ class Frame(object):
         return self.zipmap(Column.difference_symmetric, frame)
 
 
-def summarize(file_name, header=None, limit=None,
+def summarize(file_name, names=None, limit=None,
               meter_period=default_meter_period):
     reader = csv.reader(open(file_name))
-    if header is None:
-        header = reader.next()
-    freqs = [countdict() for _ in header]
+    if names is None:
+        names = reader.next()
+    freqs = [countdict() for _ in names]
     meter = Meter(meter_period, 'total rows processed: %d')
     for ridx, row in enumerate(reader):
         if limit is not None and ridx >= limit:
@@ -228,16 +228,16 @@ def summarize(file_name, header=None, limit=None,
             freqs[cidx][col] += 1
         meter.inc(1)
     meter.log()
-    frame = Frame(header, [Column(ColumnSummary(freq)) for freq in freqs])
+    frame = Frame(names, [Column(ColumnSummary(freq)) for freq in freqs])
     return frame
 
 
-def pairwise_freqs(file_name, col0, col1, header=None, limit=None,
+def pairwise_freqs(file_name, col0, col1, names=None, limit=None,
                    meter_period=default_meter_period):
     reader = csv.reader(open(file_name))
-    if header is None:
-        header = reader.next()
-    name_to_index = dict((name, idx) for idx, name in enumerate(header))
+    if names is None:
+        names = reader.next()
+    name_to_index = dict((name, idx) for idx, name in enumerate(names))
     idx0 = name_to_index[col0]
     idx1 = name_to_index[col1]
     freqs = countdict()
