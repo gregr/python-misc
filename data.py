@@ -381,7 +381,7 @@ def show_low_uniques(frame, threshold, detailed=False):
     if detailed:
         for name, col in matches:
             print name, col.summary.cats
-    else:
+    elif matches:
         names = zip(*matches)[0]
         print names
     print 'low uniques col count:', len(matches)
