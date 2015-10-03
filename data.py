@@ -234,6 +234,43 @@ def summarize(file_name, names=None, limit=None,
     return frame
 
 
+def filter_rows(file_name, make_pred, names=None, limit=None,
+                meter_period=default_meter_period):
+    logging.info('filtering: %s; names=%s limit=%s', file_name, names, limit)
+    reader = csv.reader(open(file_name))
+    if names is None:
+        names = reader.next()
+    pred = make_pred(names)
+    found = []
+    meter = Meter(meter_period, 'total rows processed: %d')
+    for ridx, row in enumerate(reader):
+        if pred(row):
+            found.append((ridx, row))
+            if len(found) >= limit:
+                break
+        meter.inc(1)
+    meter.log()
+    logging.info('finished filtering: %s', file_name)
+    return found
+
+
+def col_match_pred(col_targets):
+    def make_pred(names):
+        matchers = []
+        for idx, name in enumerate(names):
+            tgt = col_targets.get(name)
+            if tgt is not None:
+                matchers.append((idx, tgt))
+
+        def pred(row):
+            for idx, tgt in matchers:
+                if row[idx] != tgt:
+                    return False
+            return True
+        return pred
+    return make_pred
+
+
 def pairwise_freqs(file_name, col0, col1, names=None, limit=None,
                    meter_period=default_meter_period):
     reader = csv.reader(open(file_name))
