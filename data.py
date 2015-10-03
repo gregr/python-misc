@@ -274,36 +274,35 @@ def col_match_pred(col_targets):
     return make_pred
 
 
-def tuplepair_freqs(file_name, cols0, cols1, names=None, limit=None,
+def tuplepair_freqs(file_name, col_tuple_pairs, names=None, limit=None,
                     meter_period=default_meter_period):
-    logging.info('computing frequencies in %s of %s and %s; names=%s limit=%s',
-                 file_name, cols0, cols1, names, limit)
+    logging.info('computing frequencies in %s of pairs: %s; names=%s limit=%s',
+                 file_name, col_tuple_pairs, names, limit)
     reader = csv.reader(open(file_name))
     if names is None:
         names = reader.next()
     name_to_index = dict((name, idx) for idx, name in enumerate(names))
-    idxs0 = [name_to_index[col0] for col0 in cols0]
-    idxs1 = [name_to_index[col1] for col1 in cols1]
-    freqs = countdict()
+    idxss = [([name_to_index[col0] for col0 in cols0],
+              [name_to_index[col1] for col1 in cols1])
+             for cols0, cols1 in col_tuple_pairs]
+    freqss = [countdict() for _ in col_tuple_pairs]
     meter = Meter(meter_period, 'total rows processed: %d')
     for ridx, row in enumerate(reader):
         if limit is not None and ridx >= limit:
             break
-        t0 = tuple(row[idx0] for idx0 in idxs0)
-        t1 = tuple(row[idx1] for idx1 in idxs1)
-        freqs[(t0, t1)] += 1
+        for (idxs0, idxs1), freqs in zip(idxss, freqss):
+            t0 = tuple(row[idx0] for idx0 in idxs0)
+            t1 = tuple(row[idx1] for idx1 in idxs1)
+            freqs[(t0, t1)] += 1
         meter.inc(1)
     meter.log()
-    ks0, ks1 = map(set, zip(*freqs.iterkeys()))
-    for pair in cross(ks0, ks1):
-        freqs[pair] += 0
-    logging.info('finished computing frequencies in %s of %s and %s',
-                 file_name, cols0, cols1)
-    return freqs
-
-
-def pairwise_freqs(file_name, col0, col1, *args, **kwargs):
-    return tuplepair_freqs(file_name, [col0], [col1], *args, **kwargs)
+    for freqs in freqss:
+        ks0, ks1 = map(set, zip(*freqs.iterkeys()))
+        for pair in cross(ks0, ks1):
+            freqs[pair] += 0
+    logging.info('finished computing frequencies in %s of pairs: %s',
+                 file_name, col_tuple_pairs)
+    return freqss
 
 
 def chi_squared(pair_freqs):
@@ -324,7 +323,7 @@ def chi_squared(pair_freqs):
 
 
 def chi_squared_with(*args, **kwargs):
-    return chi_squared(pairwise_freqs(*args, **kwargs))
+    return map(chi_squared, tuplepair_freqs(*args, **kwargs))
 
 confidences = (1.0, 0.95, 0.9, 0.8, 0.7, 0.5, 0.3, 0.2, 0.1, 0.05, 0.01, 0.001)
 
