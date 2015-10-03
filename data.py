@@ -232,8 +232,8 @@ def summarize(file_name, names=None, limit=None,
             freqs[cidx][col] += 1
         meter.inc(1)
     meter.log()
-    logging.info('finished summarizing: %s', file_name)
     frame = Frame(names, [Column(ColumnSummary(freq)) for freq in freqs])
+    logging.info('finished summarizing: %s', file_name)
     return frame
 
 
@@ -274,26 +274,36 @@ def col_match_pred(col_targets):
     return make_pred
 
 
-def pairwise_freqs(file_name, col0, col1, names=None, limit=None,
-                   meter_period=default_meter_period):
+def tuplepair_freqs(file_name, cols0, cols1, names=None, limit=None,
+                    meter_period=default_meter_period):
+    logging.info('computing frequencies in %s of %s and %s; names=%s limit=%s',
+                 file_name, cols0, cols1, names, limit)
     reader = csv.reader(open(file_name))
     if names is None:
         names = reader.next()
     name_to_index = dict((name, idx) for idx, name in enumerate(names))
-    idx0 = name_to_index[col0]
-    idx1 = name_to_index[col1]
+    idxs0 = [name_to_index[col0] for col0 in cols0]
+    idxs1 = [name_to_index[col1] for col1 in cols1]
     freqs = countdict()
     meter = Meter(meter_period, 'total rows processed: %d')
     for ridx, row in enumerate(reader):
         if limit is not None and ridx >= limit:
             break
-        freqs[(row[idx0], row[idx1])] += 1
+        t0 = tuple(row[idx0] for idx0 in idxs0)
+        t1 = tuple(row[idx1] for idx1 in idxs1)
+        freqs[(t0, t1)] += 1
         meter.inc(1)
     meter.log()
     ks0, ks1 = map(set, zip(*freqs.iterkeys()))
     for pair in cross(ks0, ks1):
         freqs[pair] += 0
+    logging.info('finished computing frequencies in %s of %s and %s',
+                 file_name, cols0, cols1)
     return freqs
+
+
+def pairwise_freqs(file_name, col0, col1, *args, **kwargs):
+    return tuplepair_freqs(file_name, [col0], [col1], *args, **kwargs)
 
 
 def chi_squared(pair_freqs):
