@@ -10,8 +10,11 @@ from .logging import Meter
 default_meter_period = 10000
 
 
-def cross(xs, ys):
-    return [(x, y) for x in xs for y in ys]
+def cross(*xss):
+    results = [()]
+    for xs in xss:
+        results = [result + (x,) for result in results for x in xs]
+    return results
 
 
 def grouper(iterable, n):
