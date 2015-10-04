@@ -317,6 +317,17 @@ def tuplepair_freqs(file_name, col_tuple_pairs, *args, **kwargs):
     return freqss
 
 
+def pearson_correlation(xs, ys):
+    n = len(xs)
+    Sx = sum(xs)
+    Sy = sum(ys)
+    Sx2 = sum(x ** 2 for x in xs)
+    Sy2 = sum(y ** 2 for y in ys)
+    Sxy = sum(x * y for x, y in zip(xs, ys))
+    cov = n * Sxy - Sx * Sy
+    return cov / math.sqrt((n * Sx2 - (Sx ** 2)) * (n * Sy2 - (Sy ** 2)))
+
+
 def chi_squared(pair_freqs):
     keys = sorted(pair_freqs.iterkeys())
     ks0, ks1 = map(sorted, map(set, zip(*keys)))
