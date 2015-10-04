@@ -217,42 +217,58 @@ class Frame(object):
         return self.zipmap(Column.difference_symmetric, frame)
 
 
-def summarize(file_name, names=None, limit=None,
-              meter_period=default_meter_period):
-    logging.info('summarizing: %s; names=%s limit=%s', file_name, names, limit)
+def process_csv(file_name, make_observe, names=None, limit=None,
+                meter_period=default_meter_period):
+    logging.info('processing: %s; names=%s limit=%s', file_name, names, limit)
     reader = csv.reader(open(file_name))
     if names is None:
         names = reader.next()
-    freqs = [countdict() for _ in names]
+    observe = make_observe(names)
     meter = Meter(meter_period, 'total rows processed: %d')
     for ridx, row in enumerate(reader):
         if limit is not None and ridx >= limit:
             break
-        for cidx, col in enumerate(row):
-            freqs[cidx][col] += 1
+        if observe(ridx, row):
+            break
         meter.inc(1)
     meter.log()
+    logging.info('finished processing: %s', file_name)
+
+
+def summarize(file_name, *args, **kwargs):
+    logging.info('summarizing: %s', file_name)
+    state = [None, None]
+
+    def make_observe(names):
+        freqs = [countdict() for _ in names]
+        state[0] = names
+        state[1] = freqs
+
+        def observe(ridx, row):
+            for cidx, col in enumerate(row):
+                freqs[cidx][col] += 1
+        return observe
+    process_csv(file_name, make_observe, *args, **kwargs)
+    names, freqs = state
     frame = Frame(names, [Column(ColumnSummary(freq)) for freq in freqs])
     logging.info('finished summarizing: %s', file_name)
     return frame
 
 
-def filter_rows(file_name, make_pred, names=None, limit=None,
-                meter_period=default_meter_period):
-    logging.info('filtering: %s; names=%s limit=%s', file_name, names, limit)
-    reader = csv.reader(open(file_name))
-    if names is None:
-        names = reader.next()
-    pred = make_pred(names)
+def filter_rows(file_name, make_pred, max_results=None, **kwargs):
+    logging.info('filtering: %s', file_name)
     found = []
-    meter = Meter(meter_period, 'total rows processed: %d')
-    for ridx, row in enumerate(reader):
-        if pred(row):
-            found.append((ridx, row))
-            if len(found) >= limit:
-                break
-        meter.inc(1)
-    meter.log()
+
+    def make_observe(names):
+        pred = make_pred(names)
+
+        def observe(ridx, row):
+            if pred(row):
+                found.append((ridx, row))
+                if max_results is not None and len(found) >= max_results:
+                    return True
+        return observe
+    process_csv(file_name, make_observe, **kwargs)
     logging.info('finished filtering: %s', file_name)
     return found
 
@@ -274,28 +290,24 @@ def col_match_pred(col_targets):
     return make_pred
 
 
-def tuplepair_freqs(file_name, col_tuple_pairs, names=None, limit=None,
-                    meter_period=default_meter_period):
-    logging.info('computing frequencies in %s of pairs: %s; names=%s limit=%s',
-                 file_name, col_tuple_pairs, names, limit)
-    reader = csv.reader(open(file_name))
-    if names is None:
-        names = reader.next()
-    name_to_index = dict((name, idx) for idx, name in enumerate(names))
-    idxss = [([name_to_index[col0] for col0 in cols0],
-              [name_to_index[col1] for col1 in cols1])
-             for cols0, cols1 in col_tuple_pairs]
+def tuplepair_freqs(file_name, col_tuple_pairs, *args, **kwargs):
+    logging.info('computing frequencies in %s of pairs: %s',
+                 file_name, col_tuple_pairs)
     freqss = [countdict() for _ in col_tuple_pairs]
-    meter = Meter(meter_period, 'total rows processed: %d')
-    for ridx, row in enumerate(reader):
-        if limit is not None and ridx >= limit:
-            break
-        for (idxs0, idxs1), freqs in zip(idxss, freqss):
-            t0 = tuple(row[idx0] for idx0 in idxs0)
-            t1 = tuple(row[idx1] for idx1 in idxs1)
-            freqs[(t0, t1)] += 1
-        meter.inc(1)
-    meter.log()
+
+    def make_observe(names):
+        name_to_index = dict((name, idx) for idx, name in enumerate(names))
+        idxss = [([name_to_index[col0] for col0 in cols0],
+                  [name_to_index[col1] for col1 in cols1])
+                 for cols0, cols1 in col_tuple_pairs]
+
+        def observe(ridx, row):
+            for (idxs0, idxs1), freqs in zip(idxss, freqss):
+                t0 = tuple(row[idx0] for idx0 in idxs0)
+                t1 = tuple(row[idx1] for idx1 in idxs1)
+                freqs[(t0, t1)] += 1
+        return observe
+    process_csv(file_name, make_observe, *args, **kwargs)
     for freqs in freqss:
         ks0, ks1 = map(set, zip(*freqs.iterkeys()))
         for pair in cross(ks0, ks1):
