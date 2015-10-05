@@ -317,15 +317,38 @@ def tuplepair_freqs(file_name, col_tuple_pairs, *args, **kwargs):
     return freqss
 
 
-def pearson_correlation(xs, ys):
-    n = len(xs)
-    Sx = sum(xs)
-    Sy = sum(ys)
-    Sx2 = sum(x ** 2 for x in xs)
-    Sy2 = sum(y ** 2 for y in ys)
-    Sxy = sum(x * y for x, y in zip(xs, ys))
-    cov = n * Sxy - Sx * Sy
-    return cov / math.sqrt((n * Sx2 - (Sx ** 2)) * (n * Sy2 - (Sy ** 2)))
+def pearson_correlation_with(file_name, col_pairs, *args, **kwargs):
+    logging.info('computing pearson correlation in %s of pairs: %s',
+                 file_name, col_pairs)
+    state = [[0, 0.0, 0.0, 0.0, 0.0, 0.0] for _ in col_pairs]
+
+    def make_observe(names):
+        name_to_index = dict((name, idx) for idx, name in enumerate(names))
+        idxss = [(name_to_index[col0], name_to_index[col1])
+                 for col0, col1 in col_pairs]
+
+        def observe(ridx, row):
+            for idx0, idx1 in idxss:
+                try:
+                    x = float(row[idx0])
+                    y = float(row[idx1])
+                    state[0] += 1
+                    state[1] += x
+                    state[2] += y
+                    state[3] += x * x
+                    state[4] += y * y
+                    state[5] += x * y
+                except ValueError:
+                    pass
+        return observe
+    process_csv(file_name, make_observe, *args, **kwargs)
+    pair_sums = state
+    r = [((n * Sxy - Sx * Sy) /
+          math.sqrt((n * Sx2 - (Sx ** 2)) * (n * Sy2 - (Sy ** 2))))
+         for n, Sx, Sy, Sx2, Sy2, Sxy in pair_sums]
+    logging.info('finished computing pearson correlation in %s of pairs: %s',
+                 file_name, col_pairs)
+    return r
 
 
 def chi_squared(pair_freqs):
@@ -383,9 +406,6 @@ def chi_squared_correlation(chi_squared, dim0, dim1, population):
 def chi_squared_prob_correlation(chi_squared, deg_freedom, dims_pop):
     return (chi_squared_prob(chi_squared, deg_freedom),
             chi_squared_correlation(chi_squared, *dims_pop))
-
-
-# TODO: interval correlation
 
 
 def names_and_remappings(current_names, removed_names, name_to_remapping):
