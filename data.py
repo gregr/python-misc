@@ -409,6 +409,7 @@ def chi_squared_prob_correlation(chi_squared, deg_freedom, dims_pop):
 
 
 def names_and_remappings(current_names, removed_names, name_to_remapping):
+    name_to_remapping = name_to_remapping.copy()
     name_to_idx = dict((name, idx) for idx, name in enumerate(current_names))
     name_to_idx
     remappings = [{}] * len(current_names)
