@@ -25,9 +25,10 @@ class Meter(object):
         self.total = 0
 
     def log(self):
-        self.total += self.current
-        self.current = 0
-        logging.info(self.msg_template, self.total)
+        if self.current > 0:
+            self.total += self.current
+            self.current = 0
+            logging.info(self.msg_template, self.total)
 
     def inc(self, amount):
         self.current += amount
