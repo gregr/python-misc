@@ -318,10 +318,17 @@ def tuplepair_freqs(file_name, col_tuple_pairs, *args, **kwargs):
     return freqss
 
 
+def pearson_correlation(n, Sx, Sy, Sx2, Sy2, Sxy):
+    denom = math.sqrt((n * Sx2 - (Sx ** 2)) * (n * Sy2 - (Sy ** 2)))
+    if denom == 0.0:
+        return 0.0
+    return (n * Sxy - Sx * Sy) / denom
+
+
 def pearson_correlation_with(file_name, col_pairs, *args, **kwargs):
     logging.info('computing pearson correlation in %s of pairs: %s',
                  file_name, col_pairs)
-    state = [[0, 0.0, 0.0, 0.0, 0.0, 0.0] for _ in col_pairs]
+    states = [[0, 0.0, 0.0, 0.0, 0.0, 0.0] for _ in col_pairs]
 
     def make_observe(names):
         name_to_index = dict((name, idx) for idx, name in enumerate(names))
@@ -329,7 +336,7 @@ def pearson_correlation_with(file_name, col_pairs, *args, **kwargs):
                  for col0, col1 in col_pairs]
 
         def observe(ridx, row):
-            for idx0, idx1 in idxss:
+            for (idx0, idx1), state in zip(idxss, states):
                 try:
                     x = float(row[idx0])
                     y = float(row[idx1])
@@ -343,10 +350,8 @@ def pearson_correlation_with(file_name, col_pairs, *args, **kwargs):
                     pass
         return observe
     process_csv(file_name, make_observe, *args, **kwargs)
-    pair_sums = state
-    r = [((n * Sxy - Sx * Sy) /
-          math.sqrt((n * Sx2 - (Sx ** 2)) * (n * Sy2 - (Sy ** 2))))
-         for n, Sx, Sy, Sx2, Sy2, Sxy in pair_sums]
+    pair_sums = states
+    r = [pearson_correlation(*args) for args in pair_sums]
     logging.info('finished computing pearson correlation in %s of pairs: %s',
                  file_name, col_pairs)
     return r
