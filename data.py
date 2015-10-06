@@ -396,7 +396,7 @@ def chi_squared_prob(chi_squared, deg_freedom):
     if deg_freedom < 1:
         return 1.0
     if deg_freedom > 10:
-        return None
+        return None, deg_freedom, chi_squared
     scores = chi_squareds[deg_freedom - 1]
     idx = bisect_left(scores, chi_squared, 0, len(scores))
     return confidences[idx]
@@ -412,6 +412,11 @@ def chi_squared_correlation(chi_squared, dim0, dim1, population):
 def chi_squared_prob_correlation(chi_squared, deg_freedom, dims_pop):
     return (chi_squared_prob(chi_squared, deg_freedom),
             chi_squared_correlation(chi_squared, *dims_pop))
+
+
+def chi_squared_prob_correlation_with(*args, **kwargs):
+    return [chi_squared_prob_correlation(*result)
+            for result in chi_squared_with(*args, **kwargs)]
 
 
 def names_and_remappings(current_names, removed_names, name_to_remapping):
