@@ -1,25 +1,14 @@
 from __future__ import absolute_import
 from bisect import bisect_left
 import csv
-from itertools import chain, izip_longest
+from itertools import chain
 import logging
 import math
 from .dict import countdict, countdict_setops
+from .seq import chunk, cross
 from .logging import Meter
 
 default_meter_period = 10000
-
-
-def cross(*xss):
-    results = [()]
-    for xs in xss:
-        results = [result + (x,) for result in results for x in xs]
-    return results
-
-
-def grouper(iterable, n):
-    args = [iter(iterable)] * n
-    return list(izip_longest(fillvalue=None, *args))
 
 
 def validate_sanity(file_name):
@@ -360,7 +349,7 @@ def pearson_correlation_with(file_name, col_pairs, *args, **kwargs):
 def chi_squared(pair_freqs):
     keys = sorted(pair_freqs.iterkeys())
     ks0, ks1 = map(sorted, map(set, zip(*keys)))
-    gs0 = grouper(sorted(pair_freqs.iteritems()), len(ks1))
+    gs0 = chunk(sorted(pair_freqs.iteritems()), len(ks1))
     gs1 = zip(*gs0)
     ts0, ts1 = [[sum(zip(*grp)[1]) for grp in gs] for gs in (gs0, gs1)]
     total = float(sum(ts0))
