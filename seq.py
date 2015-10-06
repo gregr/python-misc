@@ -9,6 +9,14 @@ def cross(*xss):
     return results
 
 
+def subseqs(xs):
+    if xs:
+        prev = subseqs(xs[1:])
+        return [(xs[0],) + y for y in prev] + prev
+    else:
+        return [()]
+
+
 def chunk(iterable, n):
     args = [iter(iterable)] * n
     return list(izip_longest(fillvalue=None, *args))
