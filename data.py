@@ -490,16 +490,18 @@ def show_low_uniques(frame, threshold, detailed=False):
 
 def show_anomalies(frame, ratio=None, coverage=None):
     hits, misses = frame.filter(ratio=ratio, coverage=coverage)
+    cats = [(name, summ) for name, summ in sorted(misses.iteritems())
+            if len(summ.nums == 0)]
+    num_misses = [(name, summ) for name, summ in sorted(misses.iteritems())
+                  if len(summ.nums > 0)]
     print 'cats'
-    for idx, summ in sorted(misses.iteritems()):
-        if len(summ.nums) == 0:
-            print idx, summ.ratio, summ.coverage, summ.nums, len(summ.cats)
+    for name, summ in cats:
+        print name, summ.ratio, summ.coverage, summ.nums, len(summ.cats)
     print
     print 'num hits'
-    for idx, summ in sorted(hits.iteritems()):
-        print idx, summ.ratio, summ.coverage, len(summ.nums), summ.cats
+    for name, summ in sorted(hits.iteritems()):
+        print name, summ.ratio, summ.coverage, len(summ.nums), summ.cats
     print
     print 'num misses'
-    for idx, summ in sorted(misses.iteritems()):
-        if len(summ.nums) > 0:
-            print idx, summ.ratio, summ.coverage, len(summ.nums), len(summ.cats)
+    for name, summ in num_misses:
+        print name, summ.ratio, summ.coverage, len(summ.nums), len(summ.cats)
