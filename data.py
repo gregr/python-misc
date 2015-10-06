@@ -58,7 +58,11 @@ class ColumnSummary(object):
             self.count += count
             self.sum += num * count
         num_keycount = float(len(self.nums))
-        self.ratio = num_keycount / (num_keycount + float(len(self.cats)))
+        total_keycount = (num_keycount + len(self.cats))
+        if total_keycount > 0:
+            self.ratio = num_keycount / float(total_keycount)
+        else:
+            self.ratio = 0.0
         if num_keycount > 0:
             self.coverage = num_keycount / self.count
             self.min = min(self.nums)
