@@ -468,8 +468,18 @@ def uniques_lteq(threshold):
     return pred
 
 
+def uniques_eq(threshold):
+    def pred(col):
+        return len(col.uniques()) == threshold
+    return pred
+
+
 def frame_uniques_lteq(frame, threshold=1):
     return mapfilter_cols(frame, pred=uniques_lteq(threshold))
+
+
+def frame_uniques_eq(frame, count=1):
+    return mapfilter_cols(frame, pred=uniques_eq(count))
 
 
 def show_low_uniques(frame, threshold, detailed=False):
@@ -481,6 +491,17 @@ def show_low_uniques(frame, threshold, detailed=False):
         names = zip(*matches)[0]
         print names
     print 'low uniques col count:', len(matches)
+
+
+def show_eq_uniques(frame, count, detailed=False):
+    matches = frame_uniques_eq(frame, count)
+    if detailed:
+        for name, col in matches:
+            print name, col.summary.cats
+    elif matches:
+        names = zip(*matches)[0]
+        print names
+    print '%d-uniques col count:' % count, len(matches)
 
 
 def show_anomalies(frame, ratio=None, coverage=None):
