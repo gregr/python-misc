@@ -61,6 +61,12 @@ class ColumnSummary(object):
             self.min = None
             self.max = None
 
+    def proportions(self):
+        summ = self.summary
+        total = float(sum(summ.cats.itervalues()))
+        return dict((key, count / total)
+                    for key, count in summ.cats.iteritems())
+
     def stats(self):
         if self.count > 0:
             self.mean = self.sum / self.count
