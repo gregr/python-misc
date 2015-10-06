@@ -33,6 +33,7 @@ class ColumnSummary(object):
     def __init__(self, freqs):
         self.cats = freqs
         self.nums = countdict()
+        self.refresh()
 
     def enable_interval(self):
         self.nums = countdict()
@@ -42,11 +43,13 @@ class ColumnSummary(object):
                 del self.cats[key]
             except ValueError:
                 pass
+        self.refresh()
 
     def disable_interval(self):
         for key, count in self.nums.iteritems():
             self.cats[str(key)] = count
         self.nums = countdict()
+        self.refresh()
 
     def refresh(self):
         self.sum = 0
@@ -180,7 +183,6 @@ class Frame(object):
         for idx, cols in enumerate(self.cols):
             name = self.names[idx]
             summ = cols.summary
-            summ.refresh()
             if ((coverage is not None and summ.coverage < coverage) or
                     (ratio is not None and summ.ratio < ratio)):
                 misses[name] = summ
