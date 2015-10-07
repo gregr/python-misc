@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from bisect import bisect_left
+from collections import defaultdict
 import csv
 from itertools import chain
 import logging
@@ -531,3 +532,66 @@ def show_anomalies(frame, ratio=None, coverage=None):
     print 'num misses'
     for name, summ in num_misses:
         print name, summ.ratio, summ.coverage, len(summ.nums), len(summ.cats)
+
+
+def pairings(xs):
+    return [(lhs, rhs) for lhs, rhs in cross(xs, xs) if lhs < rhs]
+
+
+def cardinality_sorted_cols(frame):
+    cols_by_count = defaultdict(list)
+    for name, col in zip(frame.names, frame.cols):
+        cols_by_count[len(col.summary.cats)].append(name)
+    return cols_by_count
+
+
+def count_sorted_cats(col):
+    return sorted((count, key) for key, count in col.summary.cats.iteritems())
+
+
+def duplicates(frame, file_name):
+    names_by_cardinality = cardinality_sorted_cols(frame)
+    count_counts = sorted((len(names), count)
+                          for count, names in names_by_cardinality.iteritems())
+    eligibles = []
+    logging.info('searching for candidate duplicates')
+    for sz, k in count_counts:
+        entries = pairings(names_by_cardinality[k])
+        for lhs, rhs in entries:
+            bad = False
+            for (c0, _), (c1, _) in zip(count_sorted_cats(frame[lhs]),
+                                        count_sorted_cats(frame[rhs])):
+                if c0 != c1:
+                    bad = True
+                    break
+            if not bad:
+                eligibles.append((lhs, rhs))
+                logging.info('found candidate duplicate (%s, %s)', lhs, rhs)
+    logging.info('finished searching for candidate duplicates')
+    rejects = []
+
+    def make_obs(names):
+        name_indices = dict((name, idx) for idx, name in enumerate(names))
+        entries = dict((npair, (name_indices[npair[0]],
+                                name_indices[npair[1]],
+                                {}))
+                       for npair in eligibles)
+
+        def observe(ridx, row):
+            to_remove = []
+            for npair, (i0, i1, mapping) in entries.iteritems():
+                v0 = row[i0]
+                v1 = row[i1]
+                v0m = mapping.setdefault(v0, v1)
+                if v0m != v1:
+                    to_remove.append(npair)
+                    logging.info("rejecting %s; '%s' maps to '%s', not '%s'",
+                                 npair, v0, v0m, v1)
+            for npair in to_remove:
+                del entries[npair]
+            rejects.extend(to_remove)
+        return observe
+    logging.info('validating duplicates')
+    process_csv(file_name, make_obs)
+    logging.info('finished validating duplicates')
+    return sorted(set(npair for npair, _ in eligibles) - set(rejects))
