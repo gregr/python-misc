@@ -116,7 +116,7 @@ class Column(object):
             self.move[key] = key
             self.moved_from[key] = key
 
-    def move(self, source, target, force=False):
+    def remap(self, source, target, force=False):
         keys = set(self.moved_from.iterkeys())
         if not force and target in keys:
             raise RuntimeError("target already exists; src='%s' tgt='%s'",
