@@ -597,4 +597,4 @@ def duplicates(frame, file_name):
     logging.info('validating duplicates')
     process_csv(file_name, make_obs)
     logging.info('finished validating duplicates')
-    return sorted(set(npair for npair, _ in eligibles) - set(rejects))
+    return sorted(set(eligibles) - set(rejects))
