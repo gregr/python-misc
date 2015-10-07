@@ -1,0 +1,7 @@
+unix script harness (catch all exceptions; report to stderr; return 1)
+
+directory context
+
+git branch context
+
+subprocesses
