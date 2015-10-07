@@ -320,10 +320,10 @@ def tuplepair_freqs(file_name, col_tuple_pairs, *args, **kwargs):
 
 
 def pearson_correlation(n, Sx, Sy, Sx2, Sy2, Sxy):
-    denom = math.sqrt((n * Sx2 - (Sx ** 2)) * (n * Sy2 - (Sy ** 2)))
-    if denom == 0.0:
+    denom_squared = (n * Sx2 - (Sx ** 2)) * (n * Sy2 - (Sy ** 2))
+    if denom_squared <= 0.0:
         return 0.0
-    return (n * Sxy - Sx * Sy) / denom
+    return (n * Sxy - Sx * Sy) / math.sqrt(denom_squared)
 
 
 def pearson_correlation_with(file_name, col_pairs, *args, **kwargs):
