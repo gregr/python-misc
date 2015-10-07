@@ -23,6 +23,7 @@ class ColumnSummary(object):
     def __init__(self, freqs):
         self.cats = freqs
         self.nums = countdict()
+        self.is_interval = False
         self.refresh()
 
     def enable_interval(self):
@@ -33,12 +34,14 @@ class ColumnSummary(object):
                 del self.cats[key]
             except ValueError:
                 pass
+        self.is_interval = True
         self.refresh()
 
     def disable_interval(self):
         for key, count in self.nums.iteritems():
             self.cats[str(key)] = count
         self.nums = countdict()
+        self.is_interval = False
         self.refresh()
 
     def refresh(self):
