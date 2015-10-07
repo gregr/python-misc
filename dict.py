@@ -41,6 +41,7 @@ class SetOps(object):
         return self.difference(d0, shadow)
 
 
+# TODO: should countdict union use max/min instead of +/-?
 countdict_setops = SetOps(add, sub, lambda x: x <= 0)
 setdict_setops = SetOps(set.union, sub, lambda x: len(x) == 0)
 
