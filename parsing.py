@@ -145,3 +145,39 @@ alpha_lower = char_in(alphabet)
 alpha_upper = char_in(alphabet.upper())
 alpha = alpha_lower | alpha_upper
 alnum = digit | alpha
+
+
+# sgf example
+
+#value_text_char = ((char('\\') >> char_pred('expected any character',
+                                            #(lambda _: true)))
+                   #| char_pred("expected non-']' character",
+                               #(lambda ch: ch != ']')))
+#value_text = pure(lambda result: ''.join(result)) * many0(value_text_char)
+#prop_value = bracket('[', ']', value_text)
+#prop_ident = pure(lambda result: ''.join(result)) * many1(alpha_upper)
+
+#basic_property = pure(tupn(2, ('basic',))) * prop_ident * many1(prop_value)
+#size_property = pure(tupn(1, ('size',))) * (string('SZ') >> bracket('[', ']', nat))
+
+#point_letter = pure(lambda ch: 1 + (alphabet + alphabet.upper()).index(ch)) * alpha
+#point_value_text = pure(tupn(2)) * point_letter * (pure(lambda idx: 20 - idx) * point_letter)
+#point_value = bracket('[', ']', point_value_text)
+
+#def add_prop(color):
+    #return string('A' + color) >> (pure(tupn(1, ('add', color))) * many1(point_value))
+#add_property = add_prop('E') | add_prop('B') | add_prop('W')
+#def play_prop(color):
+    #return string(color) >> (pure(tupn(1, ('play', color))) * point_value)
+#play_property = play_prop('B') | play_prop('W')
+#property = wspace >> (play_property | add_property | size_property | basic_property)
+
+#node = wspace >> char(';') >> many0(property)
+#sequence = many1(node)
+#def parse_game_tree(stream):
+    #return bracket('(', ')', pure(tupn(2, ('game-tree',))) * sequence * many0(game_tree))(stream)
+#game_tree = Parser(parse_game_tree)
+#collection = many1((game_tree << wspace) >= eos)
+
+#sgf = '(;GM[1]FF[4]CA[UTF-8]AP[elm-goban:0]ST[2]SZ[19](;B[pj];W[im];B[kn](;W[oj];B[qo];W[ji];B[ek])(;W[ii];B[jj](;W[mg];B[mj])(;W[mk];B[mj])))(;B[jl];W[fm](;B[fo])(;B[ho])))'
+#print collection(sgf).result
